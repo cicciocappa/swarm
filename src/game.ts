@@ -11,38 +11,41 @@ export class Game {
 
     async initialize(): Promise<void> {
         setupInput();
-        const elem: HTMLDivElement = document.querySelector("div") as HTMLDivElement ; 
+        const elem: HTMLDivElement = document.querySelector("div") as HTMLDivElement;
         this.app = new Application();
         await this.app.init({ background: '#1099bb', resizeTo: elem, });
         elem.appendChild(this.app.canvas);
         // for now, we have only 2 images, so we load them directly
         //await Assets.init({manifest: "public/manifest.json"});
         //const assets = await Assets.loadBundle('game-screen');
-        await Assets.load('public/player.png');
+        await Assets.load('/player.png');
+        await Assets.load('/zombie.png');
         this.init();
+        this.app.ticker.add(ticker => this.gameLoop(ticker.deltaTime));
     }
 
-    init(){
+    init() {
         const player = new Player();
         this.entities.push(player);
         this.app?.stage.addChild(player.sprite);
-        for (let i=0;i<32; i++){
-            //const zombie = new Zombie(this.app); 
-            //this.entities.push(zombie);
+        for (let i = 0; i < 1; i++) {
+            const speed = Math.random();
+            const agility = Math.random();
+            const erratic = Math.random();
+            const awareness = Math.random();
+            const zombie = new Zombie(speed, agility, erratic, awareness);
+            this.entities.push(zombie);
+            this.app?.stage.addChild(zombie.sprite);
         }
-        
+
     }
-    private setupGameLoop(): void {
-        if (this.app) {
-          this.app.ticker.add(ticker => this.gameLoop(ticker.deltaTime));
-        }
-      }
-    
-      private gameLoop(delta: number): void {
+
+
+    private gameLoop(delta: number): void {
         // Update game logic
         this.entities.forEach(entity => entity.update(delta));
-      }
-    
+    }
+
 }
 
 /*

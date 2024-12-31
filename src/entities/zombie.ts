@@ -1,4 +1,4 @@
-import { Point } from 'pixi.js';
+import { Point, Sprite } from 'pixi.js';
 import { Player } from './player';
 
 export class Zombie {
@@ -13,6 +13,7 @@ export class Zombie {
   velocity: Point;
   direction: number;
   target: Zombie | Player | null;
+  sprite: Sprite;
 
   // Current state
   state: 'wandering' | 'following';
@@ -27,13 +28,16 @@ export class Zombie {
     this.erratic = erratic;
     this.awareness = awareness;
 
-    this.position = new Point(0, 0);
+    this.position = new Point(Math.random()*800+100, Math.random()*400);
     this.velocity = new Point(0, 0);
     this.direction = 0;
     this.target = null;
     this.state = 'wandering';
-    this.desiredVelocity = new Point(0, 0);
+    this.desiredVelocity = new Point(0,0);
     this.desiredDirection = 0;
+
+    this.sprite =  this.sprite = Sprite.from('/zombie.png');
+    this.sprite.anchor.set(0.5);
   }
 
   // Update function called every frame
@@ -47,10 +51,13 @@ export class Zombie {
     // Update position based on velocity
     this.position.x += this.velocity.x * deltaTime;
     this.position.y += this.velocity.y * deltaTime;
+    this.sprite.position = this.position;
+    this.sprite.rotation = this.direction * Math.PI/180;
   }
 
   // Wandering behavior
   wanderingBehavior(deltaTime: number) {
+    console.log(deltaTime);
     // Check if we should randomly change direction or velocity based on erratic value
     if (Math.random() < this.erratic * deltaTime) {
       this.desiredDirection = Math.random() * 360;

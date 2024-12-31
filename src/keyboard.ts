@@ -5,7 +5,7 @@ const keys: KeyState = {};
 export function setupInput(): void {
     window.addEventListener("keydown", (event) => {
         keys[event.key] = true;
-       //console.log(event.key); 
+        //console.log(event.key);
     });
 
     window.addEventListener("keyup", (event) => {
