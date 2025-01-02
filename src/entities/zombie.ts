@@ -36,7 +36,7 @@ export class Zombie {
     this.desiredVelocity = new Point(0,0);
     this.desiredDirection = 0;
 
-    this.sprite =  this.sprite = Sprite.from('/zombie.png');
+    this.sprite = Sprite.from('/zombie.png');
     this.sprite.anchor.set(0.5);
   }
 
@@ -57,7 +57,7 @@ export class Zombie {
 
   // Wandering behavior
   wanderingBehavior(deltaTime: number) {
-    console.log(deltaTime);
+    
     // Check if we should randomly change direction or velocity based on erratic value
     if (Math.random() < this.erratic * deltaTime) {
       this.desiredDirection = Math.random() * 360;

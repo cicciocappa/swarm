@@ -1,13 +1,20 @@
 // Assuming you have a PIXI.Application instance called app
 // and an array of zombies and a player
-import { Application, Assets, Point, Sprite, Ticker } from 'pixi.js';
+import { Application, Assets,  Sprite, Ticker } from 'pixi.js';
 import { Player } from './entities/player';
 import { Zombie } from './entities/zombie';
 import { setupInput } from './keyboard';
+import { Boid } from './entities/boid';
+import { QuadTree, Rectangle, Circle, Point } from './utils';
+
+export const width: number = 1024;
+export const height: number = 640;
 
 export class Game {
     private app: Application | null = null;
-    private entities: (Zombie | Player)[] = [];
+    //private entities: (Zombie | Player)[] = [];
+    private flock: Boid[] = [];
+
 
     async initialize(): Promise<void> {
         setupInput();
@@ -25,6 +32,14 @@ export class Game {
     }
 
     init() {
+
+        for (let i = 0; i < 100; i++) {
+            const boid = new Boid()
+            this.flock.push(boid);
+            this.app?.stage.addChild(boid.sprite);
+        }
+
+        /*
         const player = new Player();
         this.entities.push(player);
         this.app?.stage.addChild(player.sprite);
@@ -37,13 +52,70 @@ export class Game {
             this.entities.push(zombie);
             this.app?.stage.addChild(zombie.sprite);
         }
+            */
 
     }
 
 
     private gameLoop(delta: number): void {
         // Update game logic
-        this.entities.forEach(entity => entity.update(delta));
+        //this.entities.forEach(entity => entity.update(delta));
+
+
+        // Make quadtree
+        let boundary = new Rectangle(width / 2, height / 2, width, height);
+        /*
+        for (let i = 0; i < qtreeCapacity.length; i++) {
+            if (qtreeCapacity[i].checked) {
+                var capacity = qtreeCapacity[i].value;
+            }
+        }
+            */
+        let capacity = 8;   
+        let qtree = new QuadTree(boundary, capacity);
+
+        for (let boid of this.flock) {
+            let point = new Point(boid.position.x, boid.position.y, boid);
+            qtree.insert(point);
+        }
+        /*
+        if (showQtree) {
+            qtree.show();
+        }
+          
+
+        for (i = 0; i < bounding.length; i++) {
+            if (bounding[i].checked) {
+                var bounding_value = bounding[i].value;
+            }
+        }
+              */
+
+        let bounding_value = "Bound";
+        // flock
+        for (let boid of this.flock) {
+            if (true) {
+                let range = new Circle(boid.position.x, boid.position.y, 50);
+                let points = qtree.query(range);
+                let newFlock = [];
+                for (let point of points) {
+                    newFlock.push(point.userData);
+                }
+                boid.edges("Bound");
+                boid.flock(newFlock);
+                boid.update();
+                boid.show();
+            } else {
+                boid.edges("Bound");
+                boid.flock(this.flock);
+                boid.update();
+                boid.show();
+            }
+        }
+        qtree.clear();
+
+
+
     }
 
 }
