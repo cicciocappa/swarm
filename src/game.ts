@@ -1,11 +1,11 @@
 // Assuming you have a PIXI.Application instance called app
 // and an array of zombies and a player
-import { Application, Assets,  Sprite, Ticker } from 'pixi.js';
+import { Application, Assets, Sprite, Ticker } from 'pixi.js';
 import { Player } from './entities/player';
 import { Zombie } from './entities/zombie';
 import { setupInput } from './keyboard';
 import { Boid } from './entities/boid';
-import { QuadTree, Rectangle, Circle, Point } from './utils';
+import { QuadTree, Rectangle, Circle, Point, Vector2, Att } from './utils';
 
 export const width: number = 1024;
 export const height: number = 640;
@@ -14,11 +14,14 @@ export class Game {
     private app: Application | null = null;
     //private entities: (Zombie | Player)[] = [];
     private flock: Boid[] = [];
+  
 
 
     async initialize(): Promise<void> {
         setupInput();
         const elem: HTMLDivElement = document.querySelector("div") as HTMLDivElement;
+        elem.addEventListener("mousedown", this.setAttraction);
+        elem.addEventListener("mouseup", this.removeAttraction);
         this.app = new Application();
         await this.app.init({ background: '#1099bb', resizeTo: elem, });
         elem.appendChild(this.app.canvas);
@@ -29,6 +32,17 @@ export class Game {
         await Assets.load('/zombie.png');
         this.init();
         this.app.ticker.add(ticker => this.gameLoop(ticker.deltaTime));
+    }
+
+    setAttraction(ev: MouseEvent) {
+        Att.active = true;
+        Att.x = ev.offsetX;
+        Att.y = ev.offsetY;
+        console.log(Att);
+    }
+
+    removeAttraction(){
+        Att.active = false;
     }
 
     init() {
@@ -71,7 +85,7 @@ export class Game {
             }
         }
             */
-        let capacity = 8;   
+        let capacity = 8;
         let qtree = new QuadTree(boundary, capacity);
 
         for (let boid of this.flock) {
@@ -102,12 +116,12 @@ export class Game {
                     newFlock.push(point.userData);
                 }
                 boid.edges("Bound");
-                boid.flock(newFlock);
+                boid.flock(newFlock, this.attractionPoint);
                 boid.update();
                 boid.show();
             } else {
                 boid.edges("Bound");
-                boid.flock(this.flock);
+                boid.flock(this.flock, this.attractionPoint);
                 boid.update();
                 boid.show();
             }

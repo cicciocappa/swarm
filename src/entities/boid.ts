@@ -1,4 +1,4 @@
-import { Vector2 } from "../utils";
+import { Vector2, Att } from "../utils";
 import { width, height } from "../game";
 import { Sprite } from "pixi.js";
 
@@ -66,18 +66,21 @@ export class Boid {
 
         toAlign.mult(0.25); //alignSlider.value(
         toGroup.mult(0.25);//cohesionSlider.value()
-        toSeperate.mult(1.5); // separationSlider.value()
+        toSeperate.mult(1.0); // separationSlider.value()
 
         this.acceleration.add(toAlign);
         this.acceleration.add(toGroup);
         this.acceleration.add(toSeperate);
+        //console.log(attractionPoint);
+        if (Att.active) {
+            // 2. Apply attraction force (after other behaviors)
+            const attractionStrength = 1.5; // Adjust this value to control the strength
+            //const attractionPoint = new Vector2(width / 2, height / 2); // Center of the screen
+            this.attractTo(new Vector2(Att.x, Att.y), attractionStrength);
+        }
 
-        // 2. Apply attraction force (after other behaviors)
-        const attractionStrength = 1.5; // Adjust this value to control the strength
-        const attractionPoint = new Vector2(width / 2, height / 2); // Center of the screen
-        this.attractTo(attractionPoint, attractionStrength);
 
-        
+
     }
 
     attractTo(point: Vector2, strength: number): void {
@@ -111,6 +114,6 @@ export class Boid {
         this.sprite.position.x = this.position.x;
         this.sprite.position.y = this.position.y;
         const angle = Math.atan2(this.velocity.y, this.velocity.x);
-        this.sprite.rotation += (angle-this.sprite.rotation)/20;
+        this.sprite.rotation += (angle - this.sprite.rotation) / 40;
     }
 }

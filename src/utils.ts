@@ -1,5 +1,11 @@
 import { Boid } from "./entities/boid";
 
+export const Att = {
+    active: false,
+    x: 0,
+    y: 0,
+}
+
 export class Point {
     x: number;
     y: number;
