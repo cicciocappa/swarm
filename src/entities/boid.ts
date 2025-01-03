@@ -1,6 +1,8 @@
-import { Vector2, Att } from "../utils";
-import { width, height } from "../game";
+import { Vector2 } from "../utils";
+import { width, height, world } from "../game";
 import { Sprite } from "pixi.js";
+import { Camera } from "../camera";
+import { Player } from "./player";
 
 export class Boid {
     position: Vector2;
@@ -9,29 +11,38 @@ export class Boid {
     maxForce: number;
     maxSpeed: number;
     sprite: Sprite;
+    alerted: boolean;
+    target: null | Boid | Player;
+    normal: number;
+    //temp: boolean;
 
     constructor() {
-        this.position = new Vector2(Math.random() * width, Math.random() * height);
+        this.position = new Vector2(Math.random() * width + 400, Math.random() * height + 400);
         this.velocity = Vector2.random2D();
         this.acceleration = new Vector2(0, 0);
         this.maxForce = 0.05;
         this.maxSpeed = 0.1 + 0.9 * Math.random();
+        this.normal = this.maxSpeed;
         this.velocity.setMag(
             Math.random() * this.maxSpeed * (Math.random() > 0.5 ? 1 : -1)
         );
         this.sprite = Sprite.from('/zombie.png');
         this.sprite.anchor.set(0.5);
+
+        this.alerted = false;
+        this.target = null;
+        //this.temp = false;
     }
 
     edges(boundaryType: 'Unbound' | 'Bound'): void {
         if (boundaryType === 'Unbound') {
-            if (this.position.x > width) this.position.x = 0;
-            if (this.position.x < 0) this.position.x = width;
-            if (this.position.y > height) this.position.y = 0;
-            if (this.position.y < 0) this.position.y = height;
+            if (this.position.x > world) this.position.x = 0;
+            if (this.position.x < 0) this.position.x = world;
+            if (this.position.y > world) this.position.y = 0;
+            if (this.position.y < 0) this.position.y = world;
         } else if (boundaryType === 'Bound') {
-            if (this.position.x > width || this.position.x < 0) this.velocity.x *= -1;
-            if (this.position.y > height || this.position.y < 0) this.velocity.y *= -1;
+            if (this.position.x > world || this.position.x < 0) this.velocity.x *= -1;
+            if (this.position.y > world || this.position.y < 0) this.velocity.y *= -1;
         }
     }
 
@@ -46,6 +57,10 @@ export class Boid {
             const d = this.position.dist(other.position);
 
             if (other !== this && d < perceptionRadius) {
+                if(other.alerted && !this.alerted) {
+                    this.alerted = true;
+                    this.target = other;
+                }
                 // Alignment
                 toAlign.add(other.velocity);
                 // Cohesion
@@ -72,11 +87,20 @@ export class Boid {
         this.acceleration.add(toGroup);
         this.acceleration.add(toSeperate);
         //console.log(attractionPoint);
-        if (Att.active) {
+        if (this.alerted) {
             // 2. Apply attraction force (after other behaviors)
             const attractionStrength = 1.5; // Adjust this value to control the strength
             //const attractionPoint = new Vector2(width / 2, height / 2); // Center of the screen
-            this.attractTo(new Vector2(Att.x, Att.y), attractionStrength);
+            this.attractTo(new Vector2(this.target.position.x, this.target.position.y), attractionStrength);
+        } else {
+            // erratic
+            if (Math.random() < 0.001) {
+                const k1 = Math.random() - 0.5;
+                const k2 = Math.random() - 0.5;
+                this.acceleration.x += k1;
+                this.acceleration.y += k2;
+                //this.temp = true;
+            }
         }
 
 
@@ -94,13 +118,15 @@ export class Boid {
     }
 
     update(): void {
+        this.maxForce = this.alerted ? 0.05 : 0.1;
+        this.maxSpeed = this.alerted ? this.normal * 3: this.normal;
         this.position.add(this.velocity);
         this.velocity.add(this.acceleration);
         this.velocity.limit(this.maxSpeed);
         this.acceleration = new Vector2(0, 0); // Reset acceleration
     }
 
-    show(): void { //percept: boolean, graphics: PIXI.Graphics
+    show(camera: Camera): void { //percept: boolean, graphics: PIXI.Graphics
         /*
         graphics.lineStyle(2, 0xffffff);
         graphics.drawCircle(this.position.x, this.position.y, 2);
@@ -111,9 +137,14 @@ export class Boid {
         }
             */
 
-        this.sprite.position.x = this.position.x;
-        this.sprite.position.y = this.position.y;
+        const { screenX, screenY } = camera.worldToScreen(this.position.x, this.position.y);
+        this.sprite.position.x = screenX;
+        this.sprite.position.y = screenY;
         const angle = Math.atan2(this.velocity.y, this.velocity.x);
         this.sprite.rotation += (angle - this.sprite.rotation) / 40;
+
+        this.sprite.tint = this.alerted ? 0xff0000 : 0x00ff00;
+
+
     }
 }

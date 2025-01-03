@@ -5,23 +5,23 @@ import { Player } from './entities/player';
 import { Zombie } from './entities/zombie';
 import { setupInput } from './keyboard';
 import { Boid } from './entities/boid';
-import { QuadTree, Rectangle, Circle, Point, Vector2, Att } from './utils';
+import { QuadTree, Rectangle, Circle, Point, Vector2 } from './utils';
+import { Camera } from './camera';
 
 export const width: number = 1024;
 export const height: number = 640;
+export const world: number = 8192;
 
 export class Game {
     private app: Application | null = null;
     //private entities: (Zombie | Player)[] = [];
     private flock: Boid[] = [];
-  
+    public player: Player | null = null;
 
 
     async initialize(): Promise<void> {
         setupInput();
         const elem: HTMLDivElement = document.querySelector("div") as HTMLDivElement;
-        elem.addEventListener("mousedown", this.setAttraction);
-        elem.addEventListener("mouseup", this.removeAttraction);
         this.app = new Application();
         await this.app.init({ background: '#1099bb', resizeTo: elem, });
         elem.appendChild(this.app.canvas);
@@ -34,25 +34,17 @@ export class Game {
         this.app.ticker.add(ticker => this.gameLoop(ticker.deltaTime));
     }
 
-    setAttraction(ev: MouseEvent) {
-        Att.active = true;
-        Att.x = ev.offsetX;
-        Att.y = ev.offsetY;
-        console.log(Att);
-    }
 
-    removeAttraction(){
-        Att.active = false;
-    }
 
     init() {
 
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 4000; i++) {
             const boid = new Boid()
             this.flock.push(boid);
             this.app?.stage.addChild(boid.sprite);
         }
-
+        this.player = new Player();
+        this.app?.stage.addChild(this.player.sprite);
         /*
         const player = new Player();
         this.entities.push(player);
@@ -72,6 +64,7 @@ export class Game {
 
 
     private gameLoop(delta: number): void {
+        this.player.update(delta);
         // Update game logic
         //this.entities.forEach(entity => entity.update(delta));
 
@@ -90,6 +83,11 @@ export class Game {
 
         for (let boid of this.flock) {
             let point = new Point(boid.position.x, boid.position.y, boid);
+            let d = Math.sqrt((this.player.position.x - boid.position.x) ** 2 + (this.player.position.y - boid.position.y) ** 2);
+            if (d < 50) {
+                boid.alerted = true;
+                boid.target = this.player;
+            }
             qtree.insert(point);
         }
         /*
@@ -105,26 +103,27 @@ export class Game {
         }
               */
 
-        let bounding_value = "Bound";
+
         // flock
         for (let boid of this.flock) {
-            if (true) {
-                let range = new Circle(boid.position.x, boid.position.y, 50);
-                let points = qtree.query(range);
-                let newFlock = [];
-                for (let point of points) {
-                    newFlock.push(point.userData);
-                }
-                boid.edges("Bound");
-                boid.flock(newFlock, this.attractionPoint);
-                boid.update();
-                boid.show();
-            } else {
-                boid.edges("Bound");
-                boid.flock(this.flock, this.attractionPoint);
-                boid.update();
-                boid.show();
+
+            let range = new Circle(boid.position.x, boid.position.y, 50);
+            let points = qtree.query(range);
+            let newFlock = [];
+            for (let point of points) {
+                newFlock.push(point.userData);
+               
+
             }
+
+
+
+
+            boid.edges("Bound");
+            boid.flock(newFlock);
+            boid.update();
+            boid.show(this.player.camera);
+
         }
         qtree.clear();
 
